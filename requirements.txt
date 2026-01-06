@@ -1,0 +1,22 @@
+# --- Web Framework ---
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+python-multipart>=0.0.6  # Required for Video File Uploads
+
+# --- Computer Vision (Core) ---
+# Use "headless" for servers (no GUI dependencies like X11)
+opencv-python-headless>=4.8.0
+numpy>=1.24.0
+
+# --- Deep Learning & Tracking ---
+# 'ultralytics' includes YOLOv8 AND the ByteTrack implementation
+ultralytics>=8.1.0 
+
+# 'supervision' provides excellent utilities for tracking/counting logic
+# It handles the "LineZone" and "ByteTrack" glue code beautifully
+supervision>=0.18.0
+
+# --- Development & Testing ---
+pytest>=7.4.0
+httpx>=0.24.0  # For testing API endpoints
+black          # Formatter
