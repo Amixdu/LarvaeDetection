@@ -2,3 +2,5 @@
 /debug_frames
 venv
 __pycache__
+
+/dl/synthetic_generation/Larvae_Synthetic_Dataset
