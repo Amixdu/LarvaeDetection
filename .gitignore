@@ -2,3 +2,4 @@
 /debug_frames
 venv
 __pycache__
+.env

@@ -1,66 +1,39 @@
-import cv2
-import numpy as np
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from app.core.factory import DetectorFactory
-import tempfile
-import os
+from fastapi import APIRouter, HTTPException
+from app.services.s3_service import S3Service
+from app.services.analysis_service import AnalysisService
+from app.api.schemas import AnalyzeRequest, PresignedUrlRequest
 
 router = APIRouter()
 
-@router.post("/analyze_video")
-async def analyze_video(
-    mode: str = Form(..., description="Mode: 'traditional' or 'deep_learning'"),
-    file: UploadFile = File(...)
-):
-    # Validate File
-    if not file.filename.endswith((".mp4", ".mov", ".avi")):
-        raise HTTPException(status_code=400, detail="Invalid file type. Upload MP4/MOV/AVI.")
+# Dependency Injection
+s3_service = S3Service()
+analysis_service = AnalysisService()
 
-    # Instantiate the correct Strategy
+@router.post("/generate-upload-url")
+async def generate_upload_url(payload: PresignedUrlRequest):
+    """
+    Get a secure URL to upload video directly to S3.
+    """
     try:
-        detector = DetectorFactory.get_detector(mode)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # payload.extension is strictly typed as "mp4", "mov", or "avi"
+        result = s3_service.generate_presigned_post(payload.extension)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    # Save Upload to Temp File (OpenCV needs a file path)
-    # Note: For production, stream chunks instead of saving full file
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+@router.post("/analyze")
+async def analyze_video(payload: AnalyzeRequest):
+    """
+    Trigger backend to download from S3 and process.
+    """
     try:
-        content = await file.read()
-        temp_file.write(content)
-        temp_file.close()
-
-        # Process Video Loop
-        cap = cv2.VideoCapture(temp_file.name)
-        if not cap.isOpened():
-            raise HTTPException(status_code=500, detail="Could not open video file.")
-
-        frame_idx = 0
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        # payload.mode is strictly typed as "traditional" or "deep_learning"
+        result = analysis_service.process_video(payload.video_key, payload.mode)
+        return {"status": "success", "data": result}
         
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            
-            # Run the Strategy
-            detector.detect(frame, frame_idx)
-            frame_idx += 1
-
-        cap.release()
-
-        # Get Final Result
-        final_count = detector.get_total_unique_count()
-
-        return {
-            "filename": file.filename,
-            "mode_used": mode,
-            "total_frames_processed": frame_idx,
-            "final_larvae_count": final_count,
-            "status": "success"
-        }
-
-    finally:
-        # Cleanup temp file
-        if os.path.exists(temp_file.name):
-            os.remove(temp_file.name)
+    except ValueError as e:
+        # Catch known logic errors (like bad file or invalid S3 key)
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        # Catch unexpected system errors
+        raise HTTPException(status_code=500, detail=str(e))
