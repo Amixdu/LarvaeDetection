@@ -3,3 +3,4 @@
 venv
 __pycache__
 .env
+/dl/synthetic_generation/Larvae_Synthetic_Dataset
