@@ -16,17 +16,26 @@ class S3Service:
     def generate_presigned_post(self, extension: str = "mp4"):
         """Generates a secure URL for the frontend to upload directly to S3."""
         file_uuid = str(uuid.uuid4())
-        object_name = f"uploads/{file_uuid}.{extension}"
+        object_name = f"videos/larvae_{file_uuid}.{extension}"
+
+        mime_map = {
+            "mp4": "video/mp4",
+            "mov": "video/quicktime",
+            "avi": "video/x-msvideo"
+        }
+
+        specific_content_type = mime_map.get(extension, "video/mp4")
 
         try:
             response = self.s3_client.generate_presigned_post(
                 self.bucket,
                 object_name,
-                Fields={"acl": "private", "Content-Type": f"video/{extension}"},
+                Fields={"acl": "private", "Content-Type": specific_content_type},
                 Conditions=[
                     {"acl": "private"},
                     {"Content-Type": f"video/{extension}"},
-                    ["content-length-range", 1048576, 52428800]  # 1MB - 50MB
+                    # Min size 10KB, Max size 50MB
+                    ["content-length-range", 10240, 52428800]
                 ],
                 ExpiresIn=300
             )

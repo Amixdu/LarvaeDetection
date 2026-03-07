@@ -10,7 +10,10 @@ class Settings(BaseSettings):
 
     # OPTIONAL FIELDS WITH DEFAULTS
     AWS_REGION: str = Field("ap-southeast-2", description="AWS Region")
-    
+
+    # SECURITY CONFIG
+    API_SECRET_KEY: str = Field(..., description="Shared api secret key")
+
     # APP CONFIG
     PROJECT_NAME: str = "Larvae Detection API"
     API_V1_STR: str = "/api/v1"
@@ -22,6 +25,8 @@ class Settings(BaseSettings):
         "case_sensitive": True,
         "extra": "ignore"  # Ignore extra env vars (prevents errors on some systems)
     }
+
+    PORT: int = Field('', description="Port to run the API on")
 
 # Instantiate settings once
 settings = Settings()
