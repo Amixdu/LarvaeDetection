@@ -9,6 +9,10 @@ router = APIRouter()
 s3_service = S3Service()
 analysis_service = AnalysisService()
 
+@router.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 @router.post("/generate-upload-url")
 async def generate_upload_url(payload: PresignedUrlRequest):
     """
