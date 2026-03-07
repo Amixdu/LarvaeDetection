@@ -14,7 +14,7 @@ api_key_header = APIKeyHeader(name="x-api-key", auto_error=False)
 s3_service = S3Service()
 analysis_service = AnalysisService()
 
-@router.get("/health")
+@router.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
     return {"status": "ok"}
 
